@@ -8,4 +8,10 @@ class _ItemTest {
   @PrimaryKey()
   late ObjectId id;
   late String name;
+  late _ItemNested? item_nested;
+}
+
+@RealmModel(ObjectType.embeddedObject)
+class _ItemNested {
+  late String nested_name;
 }

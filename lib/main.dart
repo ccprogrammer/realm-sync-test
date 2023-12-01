@@ -52,7 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
   Future init() async {
     user = await app!.logIn(Credentials.anonymous());
 
-    realm = Realm(Configuration.flexibleSync(user!, [ItemTest.schema]));
+    realm = Realm(Configuration.flexibleSync(
+        user!, [ItemTest.schema, ItemNested.schema]));
     updateSubscriptions();
   }
 
@@ -69,7 +70,11 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> addSyncItem() async {
-    final newItem = ItemTest(ObjectId(), 'Test Number: ${math.Random().nextInt(999)}');
+    final newItem = ItemTest(
+      ObjectId(),
+      'Test Number: ${math.Random().nextInt(999)}',
+      item_nested: ItemNested('Nested item here'),
+    );
     realm.write<ItemTest>(() => realm.add<ItemTest>(newItem));
     setState(() {});
     log('Succeded');
@@ -132,6 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             final item = results[index];
 
                             return ListTile(
+                              isThreeLine: true,
                               title: Text(
                                 '${item.id}',
                                 style: const TextStyle(
@@ -139,7 +145,7 @@ class _MyHomePageState extends State<MyHomePage> {
                                 ),
                               ),
                               subtitle: Text(
-                                item.name,
+                                '${item.name}\n${item.item_nested?.nested_name}',
                                 style: const TextStyle(
                                   color: Colors.black,
                                 ),
