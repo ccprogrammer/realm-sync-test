@@ -2,6 +2,7 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:my_sync/item_test.dart';
+import 'package:my_sync/poll_config_sync.dart';
 import 'package:realm/realm.dart';
 
 import 'dart:math' as math;
@@ -12,7 +13,7 @@ late Realm realm;
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  app = App(AppConfiguration('sync-test-zyqrh'));
+  app = App(AppConfiguration('devicesync-mntoj'));
 
   runApp(const MyApp());
 }
@@ -52,8 +53,20 @@ class _MyHomePageState extends State<MyHomePage> {
   Future init() async {
     user = await app!.logIn(Credentials.anonymous());
 
-    realm = Realm(Configuration.flexibleSync(
-        user!, [ItemTest.schema, ItemNested.schema]));
+    realm = Realm(Configuration.flexibleSync(user!, [
+      ItemTest.schema,
+      ItemNested.schema,
+      //
+      PollConfig.schema,
+      TimeConfig.schema,
+      Config.schema,
+      Info.schema,
+      Poll.schema,
+      Round.schema,
+      Candidate.schema,
+      PollCandidate.schema,
+      PollRound.schema,
+    ]));
     updateSubscriptions();
   }
 
@@ -62,6 +75,7 @@ class _MyHomePageState extends State<MyHomePage> {
       mutableSubscriptions.clear();
 
       mutableSubscriptions.add(realm.all<ItemTest>());
+      mutableSubscriptions.add(realm.all<PollConfig>());
     });
 
     log('BEFORE WAITING SYNC');
@@ -86,6 +100,115 @@ class _MyHomePageState extends State<MyHomePage> {
     log('tmpRealm: ${tmpRealm.length}');
   }
 
+  Future<void> addSyncPoll() async {
+    final newItem = PollConfig(
+      ObjectId().toString(),
+      'Audience ${math.Random().nextInt(99)}',
+      'type',
+      'rmt',
+      99999,
+      'status',
+      'poll_id',
+      false,
+      config: Config(
+        'name',
+        'icon',
+        9,
+        1,
+        'type',
+        candidate_ids: ["0sxcyo", "c6fg23", "zwe9bf", "y4v1b8", "yyqlcg"],
+        info: Info(
+          rounds: [
+            Round('ob3b65', '', 'Classical'),
+            Round('14dfg1', '', 'folk'),
+            Round('46dfgh', '', 'western'),
+          ],
+          candidates: [
+            Candidate('uj4556', '', 'INDIA'),
+            Candidate('hgjt35', '', 'INDONESIA'),
+            Candidate('hju5t6', '', 'NIGERIA'),
+            Candidate('gh3453', '', 'UK'),
+          ],
+        ),
+        poll: Poll(
+          false,
+          'ob3b65',
+          0,
+          round: [
+            PollRound(
+              'ob3b65',
+              'label',
+              'thumbnail',
+              true,
+              false,
+              candidates: [
+                PollCandidate(
+                  'gh3453',
+                  'thumbnail',
+                  'label',
+                  false,
+                  false,
+                ),
+                PollCandidate(
+                  'hgjt35',
+                  'thumbnail',
+                  'label',
+                  false,
+                  false,
+                ),
+                PollCandidate(
+                  'hju5t6',
+                  'thumbnail',
+                  'label',
+                  false,
+                  false,
+                ),
+                PollCandidate(
+                  'gh3453',
+                  'thumbnail',
+                  'label',
+                  false,
+                  false,
+                ),
+              ],
+            ),
+          ],
+          candidate: [
+            PollCandidate(
+              'ob3b65',
+              'label',
+              'thumbnail',
+              true,
+              false,
+            ),
+            PollCandidate(
+              'fhgdrf',
+              'label',
+              'thumbnail',
+              true,
+              false,
+            ),
+          ],
+        ),
+      ),
+      time_config: TimeConfig(
+        true,
+        false,
+        "01-01-2023",
+        "12-12-2023",
+      ),
+    );
+    realm.write<PollConfig>(() => realm.add<PollConfig>(newItem));
+    setState(() {});
+    log('Succeded');
+  }
+
+  Future<void> getSyncPoll() async {
+    final tmpRealm = realm.all<PollConfig>();
+    setState(() {});
+    log('tmpRealm: ${tmpRealm.first}');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -99,13 +222,13 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: <Widget>[
                   ElevatedButton(
                     onPressed: () {
-                      addSyncItem();
+                      addSyncPoll();
                     },
                     child: const Text('Add'),
                   ),
                   ElevatedButton(
                     onPressed: () {
-                      getSyncItem();
+                      getSyncPoll();
                     },
                     child: const Text('Get'),
                   ),
@@ -118,8 +241,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 ],
               ),
               if (user != null)
-                StreamBuilder<RealmResultsChanges<ItemTest>>(
-                  stream: realm.all<ItemTest>().changes,
+                StreamBuilder<RealmResultsChanges<PollConfig>>(
+                  stream: realm.all<PollConfig>().changes,
                   builder: (context, snapshot) {
                     final data = snapshot.data;
 
@@ -139,13 +262,13 @@ class _MyHomePageState extends State<MyHomePage> {
                             return ListTile(
                               isThreeLine: true,
                               title: Text(
-                                '${item.id}',
+                                item.id,
                                 style: const TextStyle(
                                   color: Colors.black,
                                 ),
                               ),
                               subtitle: Text(
-                                '${item.name}\n${item.item_nested?.nested_name}',
+                                item.name,
                                 style: const TextStyle(
                                   color: Colors.black,
                                 ),
